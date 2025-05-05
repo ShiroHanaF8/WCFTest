@@ -28,7 +28,8 @@ namespace Server
                         {
                             Enabled = true,
                             InactivityTimeout = new TimeSpan(1, 0, 0),
-                        }
+                        },
+                        ReceiveTimeout = TimeSpan.MaxValue, // Set to maximum possible TimeSpan value  
                     }, "");
 
                     serverHost.Open();
