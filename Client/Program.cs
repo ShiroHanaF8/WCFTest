@@ -26,6 +26,16 @@ namespace Client
                 Console.WriteLine("Client callback started on port 60002");
                 Console.WriteLine("Press 'U' to update the server or 'Enter' to exit.");
                 ConsoleKeyInfo input = default;
+
+                Task.Factory.StartNew(() =>
+                {
+                    while (true)
+                    {
+                        Thread.Sleep(1000);
+                        Console.WriteLine($"{DateTime.Now} Client Check {proxy.Update()}");
+                    }
+                });
+
                 do
                 {
                     input = Console.ReadKey();

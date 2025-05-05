@@ -27,6 +27,15 @@ namespace Server
                 Console.WriteLine("Client callback connected on port 60002");
                 Console.WriteLine("Press 'C' to check the client or 'Enter' to exit.");
 
+                Task.Factory.StartNew(() =>
+                {
+                    while (true)
+                    {
+                        Thread.Sleep(1000);
+                        Console.WriteLine($"{DateTime.Now} Client Check {checkChannel.CheckClient()}");
+                    }
+                });
+
                 ConsoleKeyInfo input = default;
                 do
                 {
