@@ -14,21 +14,38 @@ namespace Server
         static void Main(string[] args)
         {
             var serverInstance = new ServerClass();
-            var host = new ServiceHost(serverInstance, new Uri("net.tcp://localhost:60001/Server"));
-            host.AddServiceEndpoint(typeof(IServerClass), new NetTcpBinding()
+            ServiceHost host = null;
+            try
             {
-                ReliableSession = new OptionalReliableSession()
+                using (host = new ServiceHost(serverInstance, new Uri("net.tcp://localhost:60001/Server")))
                 {
-                    Enabled = true,
-                    InactivityTimeout = new TimeSpan(1, 0, 0),
+                    host.AddServiceEndpoint(typeof(IServerClass), new NetTcpBinding()
+                    {
+                        ReliableSession = new OptionalReliableSession()
+                        {
+                            Enabled = true,
+                            InactivityTimeout = new TimeSpan(1, 0, 0),
+                        }
+                    }, "");
+
+                    host.Open();
+                    Console.WriteLine("Server started on port 60001");
+                    ConsoleKeyInfo input = default;
+                    do
+                    {
+                        input = Console.ReadKey();
+                        switch (input.Key)
+                        {
+                            case ConsoleKey.C:
+                                break;
+                        }
+                    } while (input.Key == ConsoleKey.Enter);
                 }
-            }, "");
-
-            host.Open();
-            Console.WriteLine("Server started on port 60001");
-            Console.ReadLine();
-
-            host.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected error: {ex.Message}");
+            }
         }
     }
 }
