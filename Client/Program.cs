@@ -7,6 +7,7 @@ using System.Runtime.Remoting.Channels.Tcp;
 using System.ServiceModel;
 using Server;
 using System.Threading;
+using System.ServiceModel.Channels;
 
 namespace Client
 {
@@ -45,34 +46,45 @@ namespace Client
         private static void CreateCheckClientEndpoint()
         {
             IClientClass clientClass = new ClientClass();
-            var clientHost = new ServiceHost(clientClass, new Uri("net.tcp://localhost:60002/Client"));
-            clientHost.AddServiceEndpoint(typeof(IClientClass), new NetTcpBinding()
+            var binding = new CustomBinding();
+            var reliableSession = new ReliableSessionBindingElement
             {
-                ReliableSession = new OptionalReliableSession()
-                {
-                    Enabled = true,
-                    InactivityTimeout = new TimeSpan(1, 0, 0),
-                }
-            }, "");
+                InactivityTimeout = new TimeSpan(1, 0, 0),
+                Ordered = true
+            };
+            var tcpTransport = new TcpTransportBindingElement
+            {
+            };
+
+            binding.Elements.Add(reliableSession);
+            binding.Elements.Add(new BinaryMessageEncodingBindingElement());
+            binding.Elements.Add(tcpTransport);
+
+            var clientHost = new ServiceHost(clientClass, new Uri("net.tcp://localhost:60002/Client"));
+            clientHost.AddServiceEndpoint(typeof(IClientClass), binding, "");
             clientHost.Open();
         }
 
         private static IServerClass CreateClientEndpoint()
         {
-
             // Create a channel factory for the service
-            var clientBinding = new NetTcpBinding()
+            var binding = new CustomBinding();
+            var reliableSession = new ReliableSessionBindingElement
             {
-                ReliableSession = new OptionalReliableSession()
-                {
-                    Enabled = true,
-                    InactivityTimeout = new TimeSpan(1, 0, 0),
-                }
+                InactivityTimeout = new TimeSpan(1, 0, 0),
+                Ordered = true
             };
+            var tcpTransport = new TcpTransportBindingElement
+            {              
+            };
+
+            binding.Elements.Add(reliableSession);
+            binding.Elements.Add(new BinaryMessageEncodingBindingElement());
+            binding.Elements.Add(tcpTransport);
+
             var serverEndpoint = new EndpointAddress("net.tcp://localhost:60001/Server");
 
-            var channelFactory = new ChannelFactory<IServerClass>(clientBinding, serverEndpoint);
-            // Create a channel to the service
+            var channelFactory = new ChannelFactory<IServerClass>(binding, serverEndpoint);
             IServerClass proxy = channelFactory.CreateChannel();
             return proxy;
         }

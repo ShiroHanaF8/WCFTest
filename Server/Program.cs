@@ -47,17 +47,22 @@ namespace Server
 
         private static IClientClass CreateCHeckClientEndpoint()
         {
-            var serverBinding = new NetTcpBinding()
+            var binding = new CustomBinding();
+            var reliableSession = new ReliableSessionBindingElement
             {
-                ReliableSession = new OptionalReliableSession()
-                {
-                    Enabled = true,
-                    InactivityTimeout = new TimeSpan(1, 0, 0),
-                }
+                InactivityTimeout = new TimeSpan(1, 0, 0),
+                Ordered = true
             };
-            var endpoint = new EndpointAddress("net.tcp://localhost:60002/Client");
+            var tcpTransport = new TcpTransportBindingElement
+            {
+            };
 
-            var channelFactory = new ChannelFactory<IClientClass>(serverBinding, endpoint);
+            binding.Elements.Add(reliableSession);
+            binding.Elements.Add(new BinaryMessageEncodingBindingElement());
+            binding.Elements.Add(tcpTransport);
+
+            var endpoint = new EndpointAddress("net.tcp://localhost:60002/Client");
+            var channelFactory = new ChannelFactory<IClientClass>(binding, endpoint);
             var checkChannel = channelFactory.CreateChannel();
             return checkChannel;
         }
@@ -65,17 +70,22 @@ namespace Server
         private static void CreateServerEndpoint()
         {
             var serverInstance = new ServerClass();
-            ServiceHost serverHost = new ServiceHost(serverInstance, new Uri("net.tcp://localhost:60001/Server"));
-
-            serverHost.AddServiceEndpoint(typeof(IServerClass), new NetTcpBinding()
+            var binding = new CustomBinding();
+            var reliableSession = new ReliableSessionBindingElement
             {
-                ReliableSession = new OptionalReliableSession()
-                {
-                    Enabled = true,
-                    InactivityTimeout = new TimeSpan(1, 0, 0),
-                }
-            }, "");
+                InactivityTimeout = new TimeSpan(1, 0, 0),
+                Ordered = true
+            };
+            var tcpTransport = new TcpTransportBindingElement
+            {
+            };
 
+            binding.Elements.Add(reliableSession);
+            binding.Elements.Add(new BinaryMessageEncodingBindingElement());
+            binding.Elements.Add(tcpTransport);
+
+            ServiceHost serverHost = new ServiceHost(serverInstance, new Uri("net.tcp://localhost:60001/Server"));
+            serverHost.AddServiceEndpoint(typeof(IServerClass), binding, "");
             serverHost.Open();
         }
     }
