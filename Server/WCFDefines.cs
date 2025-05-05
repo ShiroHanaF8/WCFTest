@@ -28,15 +28,16 @@ namespace Server
     public interface IClientClass
     {
         [OperationContract]
-        bool CheckClient();
+        int CheckClient();
     }
 
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
     public class ClientClass : IClientClass
     {
-        public bool CheckClient()
+        int count = 0;
+        public int CheckClient()
         {
-            return this != null;
+            return ++count;
         }
     }
 }
