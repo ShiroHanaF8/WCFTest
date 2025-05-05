@@ -15,7 +15,7 @@ namespace Client
         static void Main(string[] args)
         {
             // Create a channel factory for the service
-            var binding = new NetTcpBinding()
+            var clientBinding = new NetTcpBinding()
             {
                 ReliableSession = new OptionalReliableSession()
                 {
@@ -23,36 +23,49 @@ namespace Client
                     InactivityTimeout = new TimeSpan(1, 0, 0),
                 }
             };
-            var endpoint = new EndpointAddress("net.tcp://localhost:60001/Server");
+            var serverEndpoint = new EndpointAddress("net.tcp://localhost:60001/Server");
 
             Thread.Sleep(1000); // Wait for the server to start
 
-            using (var channelFactory = new ChannelFactory<IServerClass>(binding, endpoint))
+            using (var channelFactory = new ChannelFactory<IServerClass>(clientBinding, serverEndpoint))
             {
                 // Create a channel to the service
                 IServerClass proxy = null;
                 try
                 {
                     proxy = channelFactory.CreateChannel();
-
-                    // Call the Update method on the server
-                    proxy.Update();
-                    Console.WriteLine("Client started on port 60001");
-                    ConsoleKeyInfo input = default;
-                    do
+                    Console.WriteLine("Client connected on port 60001");
+                    IClientClass clientClass = new ClientClass();
+                    using (var clientHost = new ServiceHost(clientClass, new Uri("net.tcp://localhost:60002/Client")))
                     {
-                        input = Console.ReadKey();
-                        switch (input.Key)
+                        clientHost.AddServiceEndpoint(typeof(IClientClass), new NetTcpBinding()
                         {
-                            case ConsoleKey.U:
-                                Console.WriteLine($"Server Update {proxy.Update()}");
-                                break;
-                        }
-                    } while (input.Key == ConsoleKey.Enter);
+                            ReliableSession = new OptionalReliableSession()
+                            {
+                                Enabled = true,
+                                InactivityTimeout = new TimeSpan(1, 0, 0),
+                            }
+                        }, "");
+                        clientHost.Open();
+
+                        Console.WriteLine("Client callback started on port 60002");
+                        Console.WriteLine("Press 'U' to update the server or 'Enter' to exit.");
+                        ConsoleKeyInfo input = default;
+                        do
+                        {
+                            input = Console.ReadKey();
+                            switch (input.Key)
+                            {
+                                case ConsoleKey.U:
+                                    Console.WriteLine($"Server Update {proxy.Update()}");
+                                    break;
+                            }
+                        } while (input.Key != ConsoleKey.Enter);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"An unexpected error occurred: {ex.Message}");
+                    Console.WriteLine($"Client Error \n{ex.Message}");
                 }
             }
         }
