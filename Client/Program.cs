@@ -32,7 +32,7 @@ namespace Client
                     while (true)
                     {
                         Thread.Sleep(1000);
-                        Console.WriteLine($"{DateTime.Now} Client Check {proxy.Update()}");
+                        Console.WriteLine($"Polling {DateTime.Now} Client Check {proxy.Update()}");
                     }
                 });
 
@@ -56,19 +56,14 @@ namespace Client
         private static void CreateCheckClientEndpoint()
         {
             IClientClass clientClass = new ClientClass();
-            var binding = new CustomBinding();
-            var reliableSession = new ReliableSessionBindingElement
+            var binding = new NetTcpBinding()
             {
-                InactivityTimeout = new TimeSpan(1, 0, 0),
-                Ordered = true
+                ReliableSession = new OptionalReliableSession
+                {
+                    InactivityTimeout = new TimeSpan(1, 0, 0),
+                },
+                ReceiveTimeout = new TimeSpan(1, 0, 0),
             };
-            var tcpTransport = new TcpTransportBindingElement
-            {
-            };
-
-            binding.Elements.Add(reliableSession);
-            binding.Elements.Add(new BinaryMessageEncodingBindingElement());
-            binding.Elements.Add(tcpTransport);
 
             var clientHost = new ServiceHost(clientClass, new Uri("net.tcp://localhost:60002/Client"));
             clientHost.AddServiceEndpoint(typeof(IClientClass), binding, "");
@@ -78,19 +73,14 @@ namespace Client
         private static IServerClass CreateClientEndpoint()
         {
             // Create a channel factory for the service
-            var binding = new CustomBinding();
-            var reliableSession = new ReliableSessionBindingElement
+            var binding = new NetTcpBinding()
             {
-                InactivityTimeout = new TimeSpan(1, 0, 0),
-                Ordered = true
+                ReliableSession = new OptionalReliableSession
+                {
+                    InactivityTimeout = new TimeSpan(1, 0, 0),
+                },
+                ReceiveTimeout = new TimeSpan(1, 0, 0),
             };
-            var tcpTransport = new TcpTransportBindingElement
-            {              
-            };
-
-            binding.Elements.Add(reliableSession);
-            binding.Elements.Add(new BinaryMessageEncodingBindingElement());
-            binding.Elements.Add(tcpTransport);
 
             var serverEndpoint = new EndpointAddress("net.tcp://localhost:60001/Server");
 
